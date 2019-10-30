@@ -8,7 +8,7 @@ import java.util.Collection;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class JsonPath extends Comparable<JsonPath> {
+public class JsonPath implements Comparable<JsonPath> {
     private ArrayList<Identifier> jsonPath = new ArrayList<>();
 
     public Identifier getLast() {
@@ -72,15 +72,43 @@ public class JsonPath extends Comparable<JsonPath> {
     public int compareTo(JsonPath jsonPath) {
         if (this.length() != jsonPath.length()) return Integer.compare(this.length(), jsonPath.length());
         for (int i = 0; i < this.length(); i++) {
-            this.jsonPath.get(i).
+            if (!this.jsonPath.get(i).equals(jsonPath.jsonPath.get(i))) {
+                return this.jsonPath.get(i).compareTo(jsonPath.jsonPath.get(i));
+            }
         }
         return 0;
     }
 
-    static class Identifier extends Comparable<Identifier> {
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        JsonPath jsonPath1 = (JsonPath) o;
+        return Objects.equals(jsonPath, jsonPath1.jsonPath);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(jsonPath);
+    }
+
+    static class Identifier implements Comparable<Identifier> {
         private final Integer intId;
         private final String strId;
         private final Type type;
+
+        @Override
+        public int compareTo(Identifier identifier) {
+            int typeComparison = type.compareTo(identifier.type);
+            if (typeComparison != 0) {
+                return typeComparison;
+            }
+            if (type.equals(Type.OBJECT_ID)) {
+                return strId.compareTo(identifier.strId);
+            } else {
+                return intId.compareTo(identifier.intId);
+            }
+        }
 
         enum Type {
             OBJECT_ID,
@@ -88,12 +116,14 @@ public class JsonPath extends Comparable<JsonPath> {
         }
 
         Identifier(String strId) {
+            assert strId != null;
             this.strId = strId;
             this.intId = null;
             this.type = Type.OBJECT_ID;
         }
 
         Identifier(Integer intId) {
+            assert intId != null;
             this.strId = null;
             this.intId = intId;
             this.type = Type.ARRAY_ID;
